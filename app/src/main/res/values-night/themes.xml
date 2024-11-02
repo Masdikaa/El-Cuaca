@@ -1,0 +1,52 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.ElCuaca" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/dark_md_theme_primary</item>
+        <item name="colorOnPrimary">@color/dark_md_theme_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/dark_md_theme_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/dark_md_theme_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/dark_md_theme_secondary</item>
+        <item name="colorOnSecondary">@color/dark_md_theme_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/dark_md_theme_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/dark_md_theme_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/dark_md_theme_tertiary</item>
+        <item name="colorOnTertiary">@color/dark_md_theme_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/dark_md_theme_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/dark_md_theme_onTertiaryContainer</item>
+        <item name="colorError">@color/dark_md_theme_error</item>
+        <item name="colorOnError">@color/dark_md_theme_onError</item>
+        <item name="colorErrorContainer">@color/dark_md_theme_errorContainer</item>
+        <item name="colorOnErrorContainer">@color/dark_md_theme_onErrorContainer</item>
+        <item name="android:colorBackground">@color/dark_md_theme_background</item>
+        <item name="colorOnBackground">@color/dark_md_theme_onBackground</item>
+        <item name="colorSurface">@color/dark_md_theme_surface</item>
+        <item name="colorOnSurface">@color/dark_md_theme_onSurface</item>
+        <item name="colorSurfaceVariant">@color/dark_md_theme_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/dark_md_theme_onSurfaceVariant</item>
+        <item name="colorOutline">@color/dark_md_theme_outline</item>
+        <item name="colorOutlineVariant">@color/dark_md_theme_outlineVariant</item>
+        <item name="colorSurfaceInverse">@color/dark_md_theme_inverseSurface</item>
+        <item name="colorOnSurfaceInverse">@color/dark_md_theme_inverseOnSurface</item>
+        <item name="colorPrimaryInverse">@color/dark_md_theme_inversePrimary</item>
+        <item name="colorPrimaryFixed">@color/dark_md_theme_primaryFixed</item>
+        <item name="colorOnPrimaryFixed">@color/dark_md_theme_onPrimaryFixed</item>
+        <item name="colorPrimaryFixedDim">@color/dark_md_theme_primaryFixedDim</item>
+        <item name="colorOnPrimaryFixedVariant">@color/dark_md_theme_onPrimaryFixedVariant</item>
+        <item name="colorSecondaryFixed">@color/dark_md_theme_secondaryFixed</item>
+        <item name="colorOnSecondaryFixed">@color/dark_md_theme_onSecondaryFixed</item>
+        <item name="colorSecondaryFixedDim">@color/dark_md_theme_secondaryFixedDim</item>
+        <item name="colorOnSecondaryFixedVariant">@color/dark_md_theme_onSecondaryFixedVariant</item>
+        <item name="colorTertiaryFixed">@color/dark_md_theme_tertiaryFixed</item>
+        <item name="colorOnTertiaryFixed">@color/dark_md_theme_onTertiaryFixed</item>
+        <item name="colorTertiaryFixedDim">@color/dark_md_theme_tertiaryFixedDim</item>
+        <item name="colorOnTertiaryFixedVariant">@color/dark_md_theme_onTertiaryFixedVariant</item>
+        <item name="colorSurfaceDim">@color/dark_md_theme_surfaceDim</item>
+        <item name="colorSurfaceBright">@color/dark_md_theme_surfaceBright</item>
+        <item name="colorSurfaceContainerLowest">@color/dark_md_theme_surfaceContainerLowest</item>
+        <item name="colorSurfaceContainerLow">@color/dark_md_theme_surfaceContainerLow</item>
+        <item name="colorSurfaceContainer">@color/dark_md_theme_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/dark_md_theme_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/dark_md_theme_surfaceContainerHighest</item>
+    </style>
+
+</resources>
