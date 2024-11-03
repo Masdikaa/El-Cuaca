@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.masdika.elcuaca"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.masdika.elcuaca"
@@ -45,4 +45,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // Coroutine Image Loader
+    implementation(libs.coil)
+    implementation(libs.coil.network.okhttp)
 }
