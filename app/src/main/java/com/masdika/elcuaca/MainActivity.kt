@@ -12,25 +12,17 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
+import com.google.android.gms.location.*
+import com.google.android.material.textfield.TextInputLayout
 import com.masdika.elcuaca.databinding.ActivityMainBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -65,40 +57,41 @@ class MainActivity : AppCompatActivity() {
         }
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        val searchInput = binding.outlinedTextField
-        searchInput.editText?.onFocusChangeListener = View.OnFocusChangeListener { v, hasFocus ->
-            searchInput.startIconDrawable?.setColorFilter(
-                if (hasFocus) colorPrimary else colorOutline,
-                PorterDuff.Mode.SRC_IN
-            )
-            if (hasFocus) {
-                Log.d("MainActivity", "TextInputLayout is focused")
-            } else {
-                Log.d("MainActivity", "TextInputLayout is lost focused")
-            }
-        }
 
-        fetchLocationAndDisplayData() // getLoc, getAddress & getDate by Coroutines
+        val searchInput = binding.outlinedTextField
+        textInputCustomization(searchInput)
+
+        binding.indicatorProgress.visibility = View.VISIBLE
+        fetchLocationAndDisplayData()
     }
 
     private fun fetchLocationAndDisplayData() {
         CoroutineScope(Dispatchers.Main).launch {
-            val location = withContext(Dispatchers.IO) { getCurrentLocation() }
+            try {
+                val location = withContext(Dispatchers.IO) { getCurrentLocation() }
 
-            // Deffered function to get address and date
-            val addressDeferred = async(Dispatchers.IO) { getAddressFromLocation(location) }
-            val dateDeferred = async(Dispatchers.IO) { getFormattedDate() }
+                val addressDeferred = async(Dispatchers.IO) { getAddressFromLocation(location) }
+                val dateDeferred = async(Dispatchers.IO) { getFormattedDate() }
 
-            val address = addressDeferred.await()
-            val date = dateDeferred.await()
+                val address = addressDeferred.await()
+                val date = dateDeferred.await()
 
-            binding.locationTv.text = address
-            binding.dateTv.text = date
+                binding.locationTv.text = address
+                binding.dateTv.text = date
+
+                binding.indicatorProgress.visibility = View.GONE // Hide ProgressBar
+                binding.contentLayout.visibility = View.VISIBLE
+                val animation = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_in_up)
+                binding.contentLayout.startAnimation(animation)
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     @SuppressLint("MissingPermission")
-    private suspend fun getCurrentLocation(): Location? = suspendCancellableCoroutine { cont ->
+    suspend fun getCurrentLocation(): Location? = suspendCancellableCoroutine { cont ->
         var isResumed = false
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L).build()
@@ -107,12 +100,12 @@ class MainActivity : AppCompatActivity() {
                 val location = locationResult.lastLocation
                 if (location != null && !isResumed) {
                     isResumed = true
-                    cont.resume(location) { cause ->
+                    cont.resume(location) { _ ->
                         fusedLocationClient.removeLocationUpdates(this)
                     }
                 } else if (!isResumed) {
                     isResumed = true
-                    cont.resume(null) { cause ->
+                    cont.resume(null) { _ ->
                         fusedLocationClient.removeLocationUpdates(this)
                     }
                 }
@@ -158,4 +151,23 @@ class MainActivity : AppCompatActivity() {
         }
         return super.dispatchTouchEvent(event)
     }
+
+    private fun textInputCustomization(textInput: TextInputLayout) {
+        textInput.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            textInput.startIconDrawable?.setColorFilter(
+                if (hasFocus) colorPrimary else colorOutline,
+                PorterDuff.Mode.SRC_IN
+            )
+            if (hasFocus) {
+                Log.d("MainActivity", "TextInputLayout is focused")
+            } else {
+                Log.d("MainActivity", "TextInputLayout is lost focused")
+            }
+        }
+    }
+
+    /*
+    * #TODO
+    *   Resolve deprecation and add ExceptionHandling
+    * */
 }
