@@ -30,7 +30,7 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    buildFeatures{
+    buildFeatures {
         viewBinding = true
     }
 }
@@ -49,4 +49,8 @@ dependencies {
     // Coroutine Image Loader
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
+
+    // Location Service
+    implementation(libs.play.services.location)
+
 }
