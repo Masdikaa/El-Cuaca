@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.PorterDuff
 import android.graphics.Rect
 import android.location.Geocoder
+import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
@@ -17,21 +18,27 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.google.android.gms.location.*
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.masdika.elcuaca.databinding.ActivityMainBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationRequest: LocationRequest
-
-    private lateinit var userAddress: String
-    private lateinit var dayDate: String
 
     private val colorPrimary by lazy {
         val typedValue = TypedValue()
@@ -50,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -57,10 +65,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        getCurrentLocation()
-        dayDate = getFormattedDate()
-        binding.dateTv.text = dayDate
-
         val searchInput = binding.outlinedTextField
         searchInput.editText?.onFocusChangeListener = View.OnFocusChangeListener { v, hasFocus ->
             searchInput.startIconDrawable?.setColorFilter(
@@ -74,32 +78,69 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        fetchLocationAndDisplayData() // getLoc, getAddress & getDate by Coroutines
+    }
+
+    private fun fetchLocationAndDisplayData() {
+        CoroutineScope(Dispatchers.Main).launch {
+            val location = withContext(Dispatchers.IO) { getCurrentLocation() }
+
+            // Deffered function to get address and date
+            val addressDeferred = async(Dispatchers.IO) { getAddressFromLocation(location) }
+            val dateDeferred = async(Dispatchers.IO) { getFormattedDate() }
+
+            val address = addressDeferred.await()
+            val date = dateDeferred.await()
+
+            binding.locationTv.text = address
+            binding.dateTv.text = date
+        }
     }
 
     @SuppressLint("MissingPermission")
-    private fun getCurrentLocation() {
-        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L).build()
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-    }
+    private suspend fun getCurrentLocation(): Location? = suspendCancellableCoroutine { cont ->
+        var isResumed = false
 
-    private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            val location = locationResult.lastLocation
-            if (location != null) {
-                val geocoder = Geocoder(this@MainActivity)
-                val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-
-                if (addresses != null) {
-                    val address = addresses[0]
-                    val locationText = "${address.subLocality}, ${address.subAdminArea}"
-                    userAddress = locationText
-                    binding.locationTv.text = userAddress
-                    // val locationText = "${address.subLocality}, ${address.locality}, ${address.countryName}"
-                    // binding.etSearchLocation.setText(locationText)
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L).build()
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                val location = locationResult.lastLocation
+                if (location != null && !isResumed) {
+                    isResumed = true
+                    cont.resume(location) { cause ->
+                        fusedLocationClient.removeLocationUpdates(this)
+                    }
+                } else if (!isResumed) {
+                    isResumed = true
+                    cont.resume(null) { cause ->
+                        fusedLocationClient.removeLocationUpdates(this)
+                    }
                 }
                 fusedLocationClient.removeLocationUpdates(this)
             }
         }
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        cont.invokeOnCancellation {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    private fun getAddressFromLocation(location: Location?): String {
+        return if (location != null) {
+            val geocoder = Geocoder(this@MainActivity, Locale.getDefault())
+            val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+            addresses?.firstOrNull()?.let { address ->
+                "${address.subLocality}, ${address.subAdminArea}"
+            } ?: "Address not found"
+        } else {
+            "Location not available"
+        }
+    }
+
+    private fun getFormattedDate(): String {
+        val calendar = Calendar.getInstance()
+        val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH)
+        return dateFormat.format(calendar.time)
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
@@ -117,11 +158,4 @@ class MainActivity : AppCompatActivity() {
         }
         return super.dispatchTouchEvent(event)
     }
-
-    private fun getFormattedDate(): String {
-        val calendar = Calendar.getInstance()
-        val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH)
-        return dateFormat.format(calendar.time)
-    }
-
 }
