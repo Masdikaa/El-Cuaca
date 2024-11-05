@@ -26,7 +26,9 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.material.textfield.TextInputLayout
+import com.google.gson.Gson
 import com.masdika.elcuaca.databinding.ActivityMainBinding
+import com.masdika.elcuaca.weathermodel.WeatherData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -76,25 +78,44 @@ class MainActivity : AppCompatActivity() {
             try {
                 Log.d("fetchLocationAndDisplayData", " Running - ${Thread.currentThread().name} - ${Date()}}")
                 val location = withContext(Dispatchers.IO) { getCurrentLocation() }
+                if (location == null) {
+                    Log.e("fetchLocationAndDisplayData", "Location not available")
+                    return@launch
+                }
+                geoPointUser = "${location.latitude}, ${location.longitude}"
+
+                // Asynchronous
                 val addressDeferred = async(Dispatchers.IO) { getAddressFromLocation(location) }
                 val dateDeferred = async(Dispatchers.IO) { getFormattedDate() }
+                val jsonResponseDeferred = async(Dispatchers.IO) { fetchWeatherData(geoPointUser, API_KEY) }
 
-                geoPointUser = "${location?.latitude}, ${location?.longitude}"
                 address = addressDeferred.await()
                 currentDate = dateDeferred.await()
+                val jsonResponse: String? = jsonResponseDeferred.await()
+                if (jsonResponse == null) {
+                    Log.e("fetchLocationAndDisplayData", "Failed to fetch weather data")
+                    return@launch
+                }
+
+                val weatherData = parseWeatherData(jsonResponse.toString())
+
+                /*
+                * Get JSON data example
+                * val temperature = weatherData!!.data.values.temperature
+                */
 
                 binding.locationTv.text = address
                 binding.dateTv.text = currentDate
+                binding.tvTest.text = weatherData.toString()
 
                 binding.indicatorProgress.visibility = View.GONE
                 binding.contentLayout.visibility = View.VISIBLE
                 val animation = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_in_up)
                 binding.contentLayout.startAnimation(animation)
 
-                fetchWeatherData(geoPointUser, API_KEY)
-
             } catch (e: Exception) {
                 e.printStackTrace()
+                Log.e("fetchLocationAndDisplayData", e.message.toString())
             } finally {
                 Log.d("fetchLocationAndDisplayData", " Finish - ${Thread.currentThread().name} - ${Date()}}")
             }
@@ -147,29 +168,63 @@ class MainActivity : AppCompatActivity() {
         return dateFormat.format(calendar.time)
     }
 
-    suspend fun fetchWeatherData(geoPoint: String, key: String): String = withContext(Dispatchers.IO) { // Perform network operation on IO dispatcher
-        val client = OkHttpClient()
+//    private fun fetchWeatherData(geoPoint: String, key: String): String {
+//        val client = OkHttpClient()
+//        var stringResponse = ""
+//
+//        val request = Request.Builder()
+//            .url("https://api.tomorrow.io/v4/weather/realtime?location=$geoPoint&apikey=$key")
+//            .get()
+//            .addHeader("accept", "application/json")
+//            .build()
+//
+//        try {
+//            val response = client.newCall(request).execute()
+//            if (response.isSuccessful) {
+//                stringResponse = response.body?.string() ?: "Error: Empty response"
+//            } else {
+//                stringResponse = response.message
+//            }
+//        } catch (e: IOException) {
+//            Log.d("APIResponse", "${e.message}")
+//        }
+//
+//        return stringResponse
+//    }
 
-        // Build the request with the API URL, HTTP method, and headers
+    private suspend fun fetchWeatherData(geoPoint: String, key: String): String? = withContext(Dispatchers.IO) {
+        val client = OkHttpClient()
+        var stringResponse: String? = null
+
         val request = Request.Builder()
             .url("https://api.tomorrow.io/v4/weather/realtime?location=$geoPoint&apikey=$key")
             .get()
             .addHeader("accept", "application/json")
             .build()
 
-        // Try to execute the request and handle the response or errors
         try {
-            // Execute the request
             val response = client.newCall(request).execute()
-            if (response.isSuccessful) { // Return the response body as a string if successful
-                Log.d("APIRequest", response.body?.string() ?: "Error: Empty response")
-                response.body?.string() ?: "Error: Empty response"
-            } else {
-                Log.e("APIRequest", response.message)
-                "Error: ${response.message}" // Return an error message if response is unsuccessful
+            response.use {
+                stringResponse = if (response.isSuccessful) {
+                    response.body?.string() ?: "Error: Empty response"
+                } else {
+                    "Error: ${response.message}"
+                }
             }
         } catch (e: IOException) {
-            "Error: ${e.message}"// Catch and return any IO exceptions that occur
+            Log.d("APIResponse", "${e.message}")
+        }
+
+        stringResponse
+    }
+
+    private fun parseWeatherData(json: String): WeatherData? {
+        return try {
+            val gson = Gson()
+            gson.fromJson(json, WeatherData::class.java)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 
