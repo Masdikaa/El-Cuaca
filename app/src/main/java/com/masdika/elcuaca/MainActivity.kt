@@ -33,26 +33,24 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okio.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
+    private var API_KEY: String = BuildConfig.API_KEY
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
-    private val colorPrimary by lazy {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
-        typedValue.data
-    }
-
-    private val colorOutline by lazy {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(com.google.android.material.R.attr.colorOutline, typedValue, true)
-        typedValue.data
-    }
+    private lateinit var geoPointUser: String
+    private lateinit var currentDate: String
+    private lateinit var address: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,37 +63,40 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        //Variables
-        val API_KEY = BuildConfig.API_KEY //TomorrowIO API KEY
         val searchInput = binding.outlinedTextField
-
         textInputCustomization(searchInput)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         fetchLocationAndDisplayData()
     }
 
+    // Main Thread
     private fun fetchLocationAndDisplayData() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
+                Log.d("fetchLocationAndDisplayData", " Running - ${Thread.currentThread().name} - ${Date()}}")
                 val location = withContext(Dispatchers.IO) { getCurrentLocation() }
-
                 val addressDeferred = async(Dispatchers.IO) { getAddressFromLocation(location) }
                 val dateDeferred = async(Dispatchers.IO) { getFormattedDate() }
 
-                val address = addressDeferred.await()
-                val date = dateDeferred.await()
+                geoPointUser = "${location?.latitude}, ${location?.longitude}"
+                address = addressDeferred.await()
+                currentDate = dateDeferred.await()
 
                 binding.locationTv.text = address
-                binding.dateTv.text = date
+                binding.dateTv.text = currentDate
 
-                binding.indicatorProgress.visibility = View.GONE // Hide ProgressBar
+                binding.indicatorProgress.visibility = View.GONE
                 binding.contentLayout.visibility = View.VISIBLE
                 val animation = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_in_up)
                 binding.contentLayout.startAnimation(animation)
 
+                fetchWeatherData(geoPointUser, API_KEY)
+
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                Log.d("fetchLocationAndDisplayData", " Finish - ${Thread.currentThread().name} - ${Date()}}")
             }
         }
     }
@@ -146,6 +147,47 @@ class MainActivity : AppCompatActivity() {
         return dateFormat.format(calendar.time)
     }
 
+    suspend fun fetchWeatherData(geoPoint: String, key: String): String = withContext(Dispatchers.IO) { // Perform network operation on IO dispatcher
+        val client = OkHttpClient()
+
+        // Build the request with the API URL, HTTP method, and headers
+        val request = Request.Builder()
+            .url("https://api.tomorrow.io/v4/weather/realtime?location=$geoPoint&apikey=$key")
+            .get()
+            .addHeader("accept", "application/json")
+            .build()
+
+        // Try to execute the request and handle the response or errors
+        try {
+            // Execute the request
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) { // Return the response body as a string if successful
+                Log.d("APIRequest", response.body?.string() ?: "Error: Empty response")
+                response.body?.string() ?: "Error: Empty response"
+            } else {
+                Log.e("APIRequest", response.message)
+                "Error: ${response.message}" // Return an error message if response is unsuccessful
+            }
+        } catch (e: IOException) {
+            "Error: ${e.message}"// Catch and return any IO exceptions that occur
+        }
+    }
+
+    // Custom styling
+    private fun textInputCustomization(textInput: TextInputLayout) {
+        textInput.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            textInput.startIconDrawable?.setColorFilter(
+                if (hasFocus) colorPrimary else colorOutline,
+                PorterDuff.Mode.SRC_IN
+            )
+            if (hasFocus) {
+                Log.d("MainActivity", "TextInputLayout is focused")
+            } else {
+                Log.d("MainActivity", "TextInputLayout is lost focused")
+            }
+        }
+    }
+
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_DOWN) {
             val v = currentFocus
@@ -162,18 +204,16 @@ class MainActivity : AppCompatActivity() {
         return super.dispatchTouchEvent(event)
     }
 
-    private fun textInputCustomization(textInput: TextInputLayout) {
-        textInput.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
-            textInput.startIconDrawable?.setColorFilter(
-                if (hasFocus) colorPrimary else colorOutline,
-                PorterDuff.Mode.SRC_IN
-            )
-            if (hasFocus) {
-                Log.d("MainActivity", "TextInputLayout is focused")
-            } else {
-                Log.d("MainActivity", "TextInputLayout is lost focused")
-            }
-        }
+    private val colorPrimary by lazy {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+        typedValue.data
+    }
+
+    private val colorOutline by lazy {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(com.google.android.material.R.attr.colorOutline, typedValue, true)
+        typedValue.data
     }
 
 }
