@@ -19,10 +19,20 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.google.android.gms.location.*
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.material.textfield.TextInputLayout
 import com.masdika.elcuaca.databinding.ActivityMainBinding
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -49,19 +59,19 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
+        //Variables
+        val API_KEY = BuildConfig.API_KEY //TomorrowIO API KEY
         val searchInput = binding.outlinedTextField
+
         textInputCustomization(searchInput)
 
-        binding.indicatorProgress.visibility = View.VISIBLE
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         fetchLocationAndDisplayData()
     }
 
@@ -166,8 +176,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /*
-    * #TODO
-    *   Resolve deprecation and add ExceptionHandling
-    * */
 }

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
@@ -31,6 +32,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
 }
@@ -52,5 +54,8 @@ dependencies {
 
     // Location Service
     implementation(libs.play.services.location)
+
+    // HTTP Req
+    implementation(libs.okhttp)
 
 }
