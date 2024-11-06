@@ -65,61 +65,42 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val searchInput = binding.outlinedTextField
-        textInputCustomization(searchInput)
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        fetchLocationAndDisplayData()
-    }
+        initializeUI(binding.outlinedTextField)
 
-    // Main Thread
-    private fun fetchLocationAndDisplayData() {
+        //Main Thread
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                Log.d("fetchLocationAndDisplayData", " Running - ${Thread.currentThread().name} - ${Date()}}")
+                Log.d("MainThread", "Running - ${Thread.currentThread().name} | ${Date()}")
                 val location = withContext(Dispatchers.IO) { getCurrentLocation() }
-                if (location == null) {
-                    Log.e("fetchLocationAndDisplayData", "Location not available")
-                    return@launch
-                }
-                geoPointUser = "${location.latitude}, ${location.longitude}"
+                fetchCurrentLocation(location)
 
-                // Asynchronous
-                val addressDeferred = async(Dispatchers.IO) { getAddressFromLocation(location) }
-                val dateDeferred = async(Dispatchers.IO) { getFormattedDate() }
-                val jsonResponseDeferred = async(Dispatchers.IO) { fetchWeatherData(geoPointUser, API_KEY) }
+                val addressDeferred = async(Dispatchers.IO) { getAddress(location) }
+                val dateDeferred = async(Dispatchers.IO) { getDate() }
+                val weatherDataDeferred = async(Dispatchers.IO) { fetchWeatherData(geoPointUser, API_KEY) }
 
                 address = addressDeferred.await()
                 currentDate = dateDeferred.await()
-                val jsonResponse: String? = jsonResponseDeferred.await()
-                if (jsonResponse == null) {
-                    Log.e("fetchLocationAndDisplayData", "Failed to fetch weather data")
-                    return@launch
+                val jsonWeatherResponse: String? = weatherDataDeferred.await()
+
+                if (jsonWeatherResponse == null) {
+                    Log.e("MainThread", "Failed to fetch weather data")
+                    // #TODO UI Handling for null response
+                } else {
+                    // Proceed responses
+                    val weatherData = parseWeatherData(jsonWeatherResponse).toString()
+                    updateUI(weatherData)
                 }
 
-                val weatherData = parseWeatherData(jsonResponse.toString())
-
-                /*
-                * Get JSON data example
-                * val temperature = weatherData!!.data.values.temperature
-                */
-
-                binding.locationTv.text = address
-                binding.dateTv.text = currentDate
-                binding.tvTest.text = weatherData.toString()
-
-                binding.indicatorProgress.visibility = View.GONE
-                binding.contentLayout.visibility = View.VISIBLE
-                val animation = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_in_up)
-                binding.contentLayout.startAnimation(animation)
 
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.e("fetchLocationAndDisplayData", e.message.toString())
+                Log.e("MainThread", e.message.toString())
             } finally {
-                Log.d("fetchLocationAndDisplayData", " Finish - ${Thread.currentThread().name} - ${Date()}}")
+                Log.d("MainThread", "Finish - ${Thread.currentThread().name} | ${Date()}")
             }
         }
+
     }
 
     @SuppressLint("MissingPermission")
@@ -150,7 +131,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getAddressFromLocation(location: Location?): String {
+    private fun fetchCurrentLocation(location: Location?) {
+        Log.d("fetchCurrentLocation", "Running - ${Thread.currentThread().name} | ${Date()}")
+        if (location == null) {
+            Log.e("fetchLocationAndDisplayData", "Location not available")
+        } else {
+            geoPointUser = "${location.latitude},${location.longitude}"
+        }
+    }
+
+    private fun getAddress(location: Location?): String {
         return if (location != null) {
             val geocoder = Geocoder(this@MainActivity, Locale.getDefault())
             val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
@@ -162,35 +152,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getFormattedDate(): String {
+    private fun getDate(): String {
         val calendar = Calendar.getInstance()
         val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH)
         return dateFormat.format(calendar.time)
     }
-
-//    private fun fetchWeatherData(geoPoint: String, key: String): String {
-//        val client = OkHttpClient()
-//        var stringResponse = ""
-//
-//        val request = Request.Builder()
-//            .url("https://api.tomorrow.io/v4/weather/realtime?location=$geoPoint&apikey=$key")
-//            .get()
-//            .addHeader("accept", "application/json")
-//            .build()
-//
-//        try {
-//            val response = client.newCall(request).execute()
-//            if (response.isSuccessful) {
-//                stringResponse = response.body?.string() ?: "Error: Empty response"
-//            } else {
-//                stringResponse = response.message
-//            }
-//        } catch (e: IOException) {
-//            Log.d("APIResponse", "${e.message}")
-//        }
-//
-//        return stringResponse
-//    }
 
     private suspend fun fetchWeatherData(geoPoint: String, key: String): String? = withContext(Dispatchers.IO) {
         val client = OkHttpClient()
@@ -214,7 +180,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: IOException) {
             Log.d("APIResponse", "${e.message}")
         }
-
+        Log.d("fetchWeatherData", stringResponse.toString())
         stringResponse
     }
 
@@ -228,19 +194,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Custom styling
-    private fun textInputCustomization(textInput: TextInputLayout) {
-        textInput.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
-            textInput.startIconDrawable?.setColorFilter(
+    // ========================= UI Conf ================================================
+    private fun initializeUI(inputLayout: TextInputLayout) {
+        inputLayout.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            inputLayout.startIconDrawable?.setColorFilter(
                 if (hasFocus) colorPrimary else colorOutline,
                 PorterDuff.Mode.SRC_IN
             )
             if (hasFocus) {
-                Log.d("MainActivity", "TextInputLayout is focused")
+                Log.d("initializeUI", "TextInputLayout is focused")
             } else {
-                Log.d("MainActivity", "TextInputLayout is lost focused")
+                Log.d("initializeUI", "TextInputLayout is lost focused")
             }
         }
+    }
+
+    private fun updateUI(value: String) {
+        binding.locationTv.text = address
+        binding.dateTv.text = currentDate
+        binding.tvTest.text = value
+
+        binding.indicatorProgress.visibility = View.GONE
+        binding.contentLayout.visibility = View.VISIBLE
+        val animation = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_in_up)
+        binding.contentLayout.startAnimation(animation)
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
@@ -271,4 +248,4 @@ class MainActivity : AppCompatActivity() {
         typedValue.data
     }
 
-}
+} //MainActivity
