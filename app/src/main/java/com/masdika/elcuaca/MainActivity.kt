@@ -45,7 +45,9 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
-    private var API_KEY: String = BuildConfig.API_KEY
+    private lateinit var networkMonitor: NotifyNetworkConnection
+
+    private var key: String = BuildConfig.API_KEY
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -68,6 +70,9 @@ class MainActivity : AppCompatActivity() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         initializeUI(binding.outlinedTextField)
 
+        networkMonitor = NotifyNetworkConnection(this)
+        networkMonitor.startNetworkCallback()
+
         //Main Thread
         CoroutineScope(Dispatchers.Main).launch {
             try {
@@ -77,7 +82,7 @@ class MainActivity : AppCompatActivity() {
 
                 val addressDeferred = async(Dispatchers.IO) { getAddress(location) }
                 val dateDeferred = async(Dispatchers.IO) { getDate() }
-                val weatherDataDeferred = async(Dispatchers.IO) { fetchWeatherData(geoPointUser, API_KEY) }
+                val weatherDataDeferred = async(Dispatchers.IO) { fetchWeatherData(geoPointUser, key) }
 
                 address = addressDeferred.await()
                 currentDate = dateDeferred.await()
@@ -140,15 +145,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getAddress(location: Location?): String {
-        return if (location != null) {
-            val geocoder = Geocoder(this@MainActivity, Locale.getDefault())
-            val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-            addresses?.firstOrNull()?.let { address ->
-                "${address.subLocality}, ${address.subAdminArea}"
-            } ?: "Address not found"
-        } else {
-            "Location not available"
+    private suspend fun getAddress(location: Location?): String {
+        return withContext(Dispatchers.IO) {
+            if (location != null) {
+                try {
+                    val geocoder = Geocoder(this@MainActivity, Locale.getDefault())
+                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    addresses?.firstOrNull()?.let { address ->
+                        "${address.subLocality}, ${address.subAdminArea}"
+                    } ?: "Address not found"
+                } catch (e: IOException) {
+                    Log.e("getAddress", "Geocoder error: ${e.message}")
+                    "Address not found"
+                }
+            } else {
+                "Location not available"
+            }
         }
     }
 
@@ -171,14 +183,28 @@ class MainActivity : AppCompatActivity() {
         try {
             val response = client.newCall(request).execute()
             response.use {
-                stringResponse = if (response.isSuccessful) {
-                    response.body?.string() ?: "Error: Empty response"
+                val responseBody = response.body?.string()
+                stringResponse = if (!responseBody.isNullOrEmpty()) {
+                    responseBody
                 } else {
-                    "Error: ${response.message}"
+                    "Error: Response body is empty"
                 }
+
+                if (!response.isSuccessful) {
+                    Log.e("APIResponse", "Error : ${response.code} - ${response.message}")
+                    stringResponse = "Error: ${response.message}"
+                }
+
+//                stringResponse = if (response.isSuccessful) {
+//                    response.body?.string() ?: "Error: Empty response"
+//                } else {
+//                    Log.e("APIResponse", "Error : ${response.code} - ${response.message}")
+//                    "Error: ${response.message}"
+//                }
+
             }
         } catch (e: IOException) {
-            Log.d("APIResponse", "${e.message}")
+            Log.e("fetchWeatherData", "Network error: ${e.message}")
         }
         Log.d("fetchWeatherData", stringResponse.toString())
         stringResponse
@@ -196,6 +222,9 @@ class MainActivity : AppCompatActivity() {
 
     // ========================= UI Conf ================================================
     private fun initializeUI(inputLayout: TextInputLayout) {
+        binding.indicatorProgress.visibility = View.VISIBLE
+        binding.contentLayout.visibility = View.GONE
+
         inputLayout.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
             inputLayout.startIconDrawable?.setColorFilter(
                 if (hasFocus) colorPrimary else colorOutline,
@@ -246,6 +275,12 @@ class MainActivity : AppCompatActivity() {
         val typedValue = TypedValue()
         theme.resolveAttribute(com.google.android.material.R.attr.colorOutline, typedValue, true)
         typedValue.data
+    }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        networkMonitor.stopNetworkCallback()
     }
 
 } //MainActivity

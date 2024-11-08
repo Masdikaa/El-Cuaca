@@ -1,6 +1,5 @@
 package com.masdika.elcuaca.weathermodel
 
-// Data class untuk menyimpan data cuaca
 data class WeatherData(
     val data: Data,
     val location: Location
