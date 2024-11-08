@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+    id("kotlin-kapt")
 }
 
 android {
@@ -34,6 +35,7 @@ android {
     buildFeatures {
         buildConfig = true
         viewBinding = true
+        dataBinding = true
     }
 }
 
@@ -59,7 +61,5 @@ dependencies {
     implementation(libs.okhttp)
 
     //GSON
-    implementation ("com.google.code.gson:gson:2.8.8")
-
-
+    implementation (libs.gson)
 }

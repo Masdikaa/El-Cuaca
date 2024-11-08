@@ -1,4 +1,4 @@
-package com.masdika.elcuaca.weathermodel
+package com.masdika.elcuaca.model
 
 data class WeatherData(
     val data: Data,
@@ -13,19 +13,19 @@ data class Data(
 data class Values(
     val cloudBase: Double?,
     val cloudCeiling: Double?,
-    val cloudCover: Int,
+    val cloudCover: Double,
     val dewPoint: Double,
-    val freezingRainIntensity: Int,
-    val humidity: Int,
-    val precipitationProbability: Int,
+    val freezingRainIntensity: Double,
+    val humidity: Double,
+    val precipitationProbability: Double,
     val pressureSurfaceLevel: Double,
-    val rainIntensity: Int,
-    val sleetIntensity: Int,
-    val snowIntensity: Int,
+    val rainIntensity: Double,
+    val sleetIntensity: Double,
+    val snowIntensity: Double,
     val temperature: Double,
     val temperatureApparent: Double,
-    val uvHealthConcern: Int,
-    val uvIndex: Int,
+    val uvHealthConcern: Double,
+    val uvIndex: Double,
     val visibility: Double,
     val weatherCode: Int,
     val windDirection: Double,

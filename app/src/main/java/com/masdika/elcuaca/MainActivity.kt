@@ -2,6 +2,7 @@ package com.masdika.elcuaca
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.Rect
 import android.location.Geocoder
@@ -12,9 +13,11 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -25,10 +28,12 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
 import com.masdika.elcuaca.databinding.ActivityMainBinding
-import com.masdika.elcuaca.weathermodel.WeatherData
+import com.masdika.elcuaca.databinding.SnackbarNetworkDisconnectedBinding
+import com.masdika.elcuaca.model.WeatherData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -72,6 +77,7 @@ class MainActivity : AppCompatActivity() {
 
         networkMonitor = NotifyNetworkConnection(this)
         networkMonitor.startNetworkCallback()
+        monitorNetworkChanges()
 
         //Main Thread
         CoroutineScope(Dispatchers.Main).launch {
@@ -90,13 +96,12 @@ class MainActivity : AppCompatActivity() {
 
                 if (jsonWeatherResponse == null) {
                     Log.e("MainThread", "Failed to fetch weather data")
-                    // #TODO UI Handling for null response
+                    // #TODO UI Handling for null response ￼
                 } else {
                     // Proceed responses
                     val weatherData = parseWeatherData(jsonWeatherResponse).toString()
                     updateUI(weatherData)
                 }
-
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -195,13 +200,6 @@ class MainActivity : AppCompatActivity() {
                     stringResponse = "Error: ${response.message}"
                 }
 
-//                stringResponse = if (response.isSuccessful) {
-//                    response.body?.string() ?: "Error: Empty response"
-//                } else {
-//                    Log.e("APIResponse", "Error : ${response.code} - ${response.message}")
-//                    "Error: ${response.message}"
-//                }
-
             }
         } catch (e: IOException) {
             Log.e("fetchWeatherData", "Network error: ${e.message}")
@@ -217,6 +215,14 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    private fun monitorNetworkChanges() {
+        networkMonitor.observe(this) { isConnected ->
+            if (!isConnected) {
+                showCustomSnackBar(binding.root)
+            }
         }
     }
 
@@ -265,6 +271,26 @@ class MainActivity : AppCompatActivity() {
         return super.dispatchTouchEvent(event)
     }
 
+    private fun Context.showCustomSnackBar(container: View?) {
+        container?.let {
+            val snackView = View.inflate(this, R.layout.snackbar_network_disconnected, null)
+            val snackbarBinding = SnackbarNetworkDisconnectedBinding.bind(snackView)
+            val snackBar = Snackbar.make(container, "", Snackbar.LENGTH_LONG)
+            snackBar.view.setBackgroundColor(Color.TRANSPARENT)
+
+            // Tambahkan fungsi untuk refresh button
+            val refreshButton = snackbarBinding.tvRefresh
+            snackBar.apply {
+                (view as ViewGroup).addView(snackbarBinding.root)
+                refreshButton.setOnClickListener {
+                    snackBar.dismiss()
+                    Toast.makeText(this@MainActivity, "Refresh", Toast.LENGTH_SHORT).show()
+                }
+                show()
+            }
+        }
+    }
+
     private val colorPrimary by lazy {
         val typedValue = TypedValue()
         theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
@@ -276,7 +302,6 @@ class MainActivity : AppCompatActivity() {
         theme.resolveAttribute(com.google.android.material.R.attr.colorOutline, typedValue, true)
         typedValue.data
     }
-
 
     override fun onDestroy() {
         super.onDestroy()

@@ -54,6 +54,7 @@ class PermissionHandlingActivity : AppCompatActivity() {
                 PERMISSION_REQUEST_CODE
             )
         } else {
+            //Change intent to choose activity #HERE
             startActivity(Intent(this, MainActivity::class.java))
             finish()
         }
