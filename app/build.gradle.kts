@@ -50,6 +50,9 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    //Fragment
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
+
     // Coroutine Image Loader
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
