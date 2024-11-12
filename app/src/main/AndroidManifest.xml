@@ -8,6 +8,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <meta-data
+        android:name="API_KEY"
+        android:value="${API_KEY}" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -18,7 +22,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ElCuaca"
         tools:targetApi="31">
-
+        <activity
+            android:name=".DebugActivity"
+            android:exported="false" />
         <activity
             android:name=".PermissionHandlingActivity"
             android:exported="true">
@@ -28,15 +34,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
-            android:name=".MainActivity"
+            android:name=".view.MainActivity"
             android:exported="false" />
-
     </application>
-
-    <meta-data
-        android:name="API_KEY"
-        android:value="${API_KEY}" />
 
 </manifest>
