@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.Rect
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -21,7 +23,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
-import com.masdika.elcuaca.NotifyNetworkConnection
 import com.masdika.elcuaca.R
 import com.masdika.elcuaca.databinding.ActivityMainBinding
 import com.masdika.elcuaca.databinding.SnackbarNetworkDisconnectedBinding
@@ -29,7 +30,8 @@ import com.masdika.elcuaca.viewmodel.MainViewModel
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var networkMonitor: NotifyNetworkConnection
+    private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var networkCallback: ConnectivityManager.NetworkCallback
     private lateinit var viewModel: MainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,22 +46,23 @@ class MainActivity : AppCompatActivity() {
         }
         initializeUI(binding.outlinedTextField)
 
-        networkMonitor = NotifyNetworkConnection(this)
-        networkMonitor.startNetworkCallback()
-        monitorNetworkChanges()
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                Toast.makeText(this@MainActivity, "onAvailable", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onLost(network: Network) {
+                Toast.makeText(this@MainActivity, "onLost", Toast.LENGTH_SHORT).show()
+                showCustomSnackBar(binding.snackbarLayout)
+            }
+        }
+        connectivityManager.registerDefaultNetworkCallback(networkCallback)
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         fetchDataUI()
-
     }
 
-    private fun monitorNetworkChanges() {
-        networkMonitor.observe(this) { isConnected ->
-            if (!isConnected) {
-                showCustomSnackBar(binding.root)
-            }
-        }
-    }
 
     // ========================= UI Conf ================================================
     private fun initializeUI(inputLayout: TextInputLayout) {
@@ -154,7 +157,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        networkMonitor.stopNetworkCallback()
+        try {
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+        } catch (e: IllegalArgumentException) {
+            Log.e("NetworkCallback", "Unregistered Callback.")
+        }
     }
 
 } //MainActivity
