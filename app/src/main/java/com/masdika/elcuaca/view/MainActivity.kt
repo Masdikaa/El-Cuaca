@@ -12,15 +12,14 @@ import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
 import com.masdika.elcuaca.R
@@ -32,7 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var connectivityManager: ConnectivityManager
     private lateinit var networkCallback: ConnectivityManager.NetworkCallback
-    private lateinit var viewModel: MainViewModel
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,26 +48,22 @@ class MainActivity : AppCompatActivity() {
         connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                Toast.makeText(this@MainActivity, "onAvailable", Toast.LENGTH_SHORT).show()
+                Log.d("NetworkCallback", "On Available")
             }
 
             override fun onLost(network: Network) {
-                Toast.makeText(this@MainActivity, "onLost", Toast.LENGTH_SHORT).show()
+                Log.d("NetworkCallback", "On Lost")
                 showCustomSnackBar(binding.snackbarLayout)
             }
         }
-        connectivityManager.registerDefaultNetworkCallback(networkCallback)
 
-        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
+        connectivityManager.registerDefaultNetworkCallback(networkCallback)
         fetchDataUI()
     }
-
 
     // ========================= UI Conf ================================================
     private fun initializeUI(inputLayout: TextInputLayout) {
         binding.indicatorProgress.visibility = View.VISIBLE
-        binding.contentLayout.visibility = View.GONE
-
         inputLayout.editText?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
             inputLayout.startIconDrawable?.setColorFilter(
                 if (hasFocus) colorPrimary else colorOutline,
@@ -82,24 +77,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateUI() {
+    private fun updateUI(bundle: Bundle) {
         binding.indicatorProgress.visibility = View.GONE
-        binding.contentLayout.visibility = View.VISIBLE
-        val animation = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_in_up)
-        binding.contentLayout.startAnimation(animation)
+        val fragment = ContentFragment()
+        fragment.arguments = bundle
+        supportFragmentManager.beginTransaction().add(R.id.frame_layout, fragment)
+            .commit()
     }
 
     private fun fetchDataUI() {
+        val bundle = Bundle()
         viewModel.userLiveData.observe(this) { userData ->
-            binding.locationTv.text = userData.address
-            binding.dateTv.text = userData.currentDate
+            bundle.putString("address", userData.address)
+            bundle.putString("currentDate", userData.currentDate)
         }
 
         viewModel.weatherLiveData.observe(this) { weatherData ->
             weatherData?.let {
-                // Show in UI
-                binding.tvTest.text = weatherData.data?.values.toString()
-                updateUI()
+                bundle.putDouble("temperature", weatherData.data!!.values.temperature!!)
+                bundle.putInt("weatherCode", weatherData.data.values.weatherCode!!)
+                updateUI(bundle)
             } ?: run {
                 // Handle error
                 Log.d("MainActivity-weatherLiveData", "Empty Data")

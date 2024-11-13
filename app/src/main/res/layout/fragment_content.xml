@@ -1,8 +1,136 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_fragment_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
     tools:context=".view.ContentFragment">
 
-</FrameLayout>
+    <ImageView
+        android:id="@+id/weather_image"
+        android:layout_width="170dp"
+        android:layout_height="170dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/rain"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/horizontal1" />
+
+    <TextView
+        android:id="@+id/tv_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/poppins"
+        android:text="Wednesday, 13 November 2024"
+        android:textAlignment="center"
+        android:textColor="?attr/colorSurfaceInverse"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toStartOf="@+id/vertical3"
+        app:layout_constraintStart_toStartOf="@+id/vertical1"
+        app:layout_constraintTop_toBottomOf="@+id/weather_image" />
+
+    <RelativeLayout
+        android:id="@+id/address_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical|center_horizontal"
+        app:layout_constraintEnd_toStartOf="@+id/vertical3"
+        app:layout_constraintStart_toStartOf="@+id/vertical1"
+        app:layout_constraintTop_toBottomOf="@id/tv_date">
+
+        <TextView
+            android:id="@+id/tv_address"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:fontFamily="@font/poppins"
+            android:text="Mrican, Kabupaten Ponorogo GG"
+            android:textAlignment="center"
+            android:textColor="?attr/colorSurfaceInverse"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:layout_width="18sp"
+            android:layout_height="18sp"
+            android:layout_centerVertical="true"
+            android:layout_margin="3dp"
+            android:layout_toEndOf="@id/tv_address"
+            android:scaleType="fitCenter"
+            android:src="@drawable/user_location" />
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/tv_weather_code"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/antipasto"
+        android:text="Thunderstorm"
+        android:textAlignment="center"
+        android:textColor="?attr/colorSurfaceInverse"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/vertical3"
+        app:layout_constraintStart_toStartOf="@+id/vertical1"
+        app:layout_constraintTop_toBottomOf="@id/address_layout" />
+
+    <TextView
+        android:id="@+id/tv_temperature"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:text="34°C"
+        android:textAlignment="center"
+        android:textColor="?attr/colorSurfaceInverse"
+        android:textSize="60sp"
+        app:layout_constraintEnd_toStartOf="@+id/vertical3"
+        app:layout_constraintStart_toStartOf="@+id/vertical1"
+        app:layout_constraintTop_toBottomOf="@id/tv_weather_code" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/horizontal1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.03" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/horizontal2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/horizontal3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.97" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.05" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.95" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

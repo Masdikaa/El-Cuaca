@@ -45,65 +45,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/outlinedTextField" />
 
-    <LinearLayout
-        android:id="@+id/content_layout"
+    <FrameLayout
+        android:id="@+id/frame_layout"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="15dp"
-        android:layout_marginTop="12dp"
-        android:orientation="vertical"
-        android:visibility="visible"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/outlinedTextField">
-
-        <TextView
-            android:id="@+id/date_tv"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/poppins"
-            android:text="Today, 4 November 2024"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="16sp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="20sp"
-                android:layout_height="20sp"
-                android:layout_gravity="center"
-                android:layout_marginEnd="7dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/user_location"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <TextView
-                android:id="@+id/location_tv"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:fontFamily="@font/antipasto"
-                android:text="Ponorogo"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tv_test"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="TES"
-            android:textSize="18sp" />
-
-    </LinearLayout>
+        app:layout_constraintTop_toBottomOf="@id/outlinedTextField" />
 
     <RelativeLayout
         android:id="@+id/snackbar_layout"
