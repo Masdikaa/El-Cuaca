@@ -289,4 +289,5 @@
     <color name="dark_md_theme_surfaceContainerHigh_highContrast">#252A30</color>
     <color name="dark_md_theme_surfaceContainerHighest_highContrast">#30353B</color>
 
+    <color name="transparent">#00FFFFFF</color>
 </resources>

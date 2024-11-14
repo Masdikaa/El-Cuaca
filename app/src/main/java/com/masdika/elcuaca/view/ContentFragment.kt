@@ -1,5 +1,6 @@
 package com.masdika.elcuaca.view
 
+import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -25,6 +26,23 @@ class ContentFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentContentBinding.inflate(inflater, container, false)
+
+        when (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) {
+            android.content.res.Configuration.UI_MODE_NIGHT_YES -> {
+                // Dark Theme
+                binding.mainFragmentContainer.setBackgroundResource(R.drawable.gradient_animation_dark)
+            }
+
+            android.content.res.Configuration.UI_MODE_NIGHT_NO -> {
+                // Light Theme
+                binding.mainFragmentContainer.setBackgroundResource(R.drawable.gradient_animation_light)
+            }
+        }
+
+        val animationDrawable = binding.mainFragmentContainer.background as AnimationDrawable
+        animationDrawable.setEnterFadeDuration(10)
+        animationDrawable.setExitFadeDuration(4000)
+        animationDrawable.start()
 
         address = arguments?.getString("address").toString()
         currentDate = arguments?.getString("currentDate").toString()
